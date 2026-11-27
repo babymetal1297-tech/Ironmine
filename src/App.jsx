@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
 import './App.css';
 import { LanguageProvider, useLanguage } from './context/LanguageContext.jsx';
+import { products } from './data/products.js';
+import { articles } from './data/articles.js';
 import Navbar from './components/Navbar.jsx';
 import Footer from './components/Footer.jsx';
 import HomePage from './pages/HomePage.jsx';
@@ -14,7 +16,8 @@ import ArticlesPage from './pages/ArticlesPage.jsx';
 import ArticleDetailPage from './pages/ArticleDetailPage.jsx';
 
 function AppShell() {
-  const { t } = useLanguage();
+  const { lang, t } = useLanguage();
+  const location = useLocation();
   const [cart, setCart] = useState([]);
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem('ironmine-theme');
@@ -30,6 +33,62 @@ function AppShell() {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('ironmine-theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    const path = location.pathname;
+    let pageTitle =
+      lang === 'id'
+        ? 'IronMine — Toko Besi & Baja Terpercaya'
+        : 'IronMine — Trusted Iron & Steel Store';
+    let pageDesc =
+      lang === 'id'
+        ? 'IronMine adalah distributor besi beton SNI, baja ringan, plat, pipa galvanis, dan perkakas konstruksi berkualitas.'
+        : 'IronMine is a trusted supplier of SNI rebar, light steel framing, steel plates, galvanized pipes, and welding hardware.';
+
+    if (path === '/catalog') {
+      pageTitle = `${t.catalog.title} | IronMine`;
+      pageDesc = t.catalog.subtitle;
+    } else if (path.startsWith('/product/')) {
+      const id = path.replace('/product/', '');
+      const item = products.find((p) => String(p.id) === id);
+      if (item) {
+        pageTitle = `${item.title} | IronMine`;
+        pageDesc = item.description;
+      } else {
+        pageTitle = `${t.detail.errorTitle} | IronMine`;
+      }
+    } else if (path === '/cart') {
+      pageTitle = `${t.cart.title} | IronMine`;
+      pageDesc = t.cart.emptyDesc;
+    } else if (path === '/checkout') {
+      pageTitle = `${t.checkout.title} | IronMine`;
+      pageDesc = t.checkout.contactSection;
+    } else if (path === '/contact') {
+      pageTitle = `${t.contact.title} | IronMine`;
+      pageDesc = t.contact.subtitle;
+    } else if (path === '/articles') {
+      pageTitle = `${t.articles.title} | IronMine`;
+      pageDesc = t.articles.subtitle;
+    } else if (path.startsWith('/articles/')) {
+      const id = path.replace('/articles/', '');
+      const article = articles.find((a) => a.id === id);
+      if (article) {
+        pageTitle = `${article.title[lang]} | IronMine`;
+        pageDesc = article.excerpt[lang];
+      } else {
+        pageTitle = `${t.articles.notFoundTitle} | IronMine`;
+      }
+    }
+
+    document.title = pageTitle;
+    let metaDesc = document.querySelector('meta[name="description"]');
+    if (!metaDesc) {
+      metaDesc = document.createElement('meta');
+      metaDesc.setAttribute('name', 'description');
+      document.head.appendChild(metaDesc);
+    }
+    metaDesc.setAttribute('content', pageDesc);
+  }, [location.pathname, lang, t]);
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
