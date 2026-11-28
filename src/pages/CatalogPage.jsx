@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Sidebar from '../components/Sidebar.jsx';
 import ProductCard from '../components/ProductCard.jsx';
 import { useLanguage } from '../context/LanguageContext.jsx';
@@ -12,6 +12,40 @@ export default function CatalogPage({ onAddToCart }) {
   const [inStockOnly, setInStockOnly] = useState(false);
   const [sortBy, setSortBy] = useState('default');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const dockRef = useRef(null);
+
+  useEffect(() => {
+    function handlePointerDown(event) {
+      if (dockRef.current && !dockRef.current.contains(event.target)) {
+        setIsSidebarOpen(false);
+      }
+    }
+
+    function handleKeyDown(event) {
+      if (event.key === 'Escape') {
+        setIsSidebarOpen(false);
+      }
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
+  function handleDockMouseEnter() {
+    if (window.matchMedia('(hover: hover) and (min-width: 769px)').matches) {
+      setIsSidebarOpen(true);
+    }
+  }
+
+  function handleDockMouseLeave() {
+    if (window.matchMedia('(hover: hover) and (min-width: 769px)').matches) {
+      setIsSidebarOpen(false);
+    }
+  }
 
   function handleResetFilters() {
     setSelectedCategory('all');
@@ -52,9 +86,10 @@ export default function CatalogPage({ onAddToCart }) {
   return (
     <>
       <div
+        ref={dockRef}
         className={`sidebar-hover-dock ${isSidebarOpen ? 'is-open' : ''}`}
-        onMouseEnter={() => setIsSidebarOpen(true)}
-        onMouseLeave={() => setIsSidebarOpen(false)}
+        onMouseEnter={handleDockMouseEnter}
+        onMouseLeave={handleDockMouseLeave}
       >
         <button
           type="button"
